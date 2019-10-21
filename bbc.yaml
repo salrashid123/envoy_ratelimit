@@ -1,0 +1,104 @@
+admin:
+  access_log_path: /dev/null
+  address:
+    socket_address:
+      address: 127.0.0.1
+      port_value: 9000
+
+node:
+  cluster: service_greeter
+  id: test-id
+
+static_resources:
+  listeners:
+  - name: listener_0
+    address:
+      socket_address: { address: 0.0.0.0, port_value: 10000 }
+    filter_chains:
+    - filters:
+      - name: envoy.http_connection_manager
+        config:
+          access_log:
+          - name: envoy.file_access_log
+            config:
+              path: "/dev/stdout"
+          stat_prefix: ingress_http
+          codec_type: AUTO
+          route_config:
+            name: local_route
+            virtual_hosts:
+            - name: local_service
+              domains: ["*"]
+              routes:
+              - match: { regex: ".*" }
+                route: { host_rewrite: localhost, cluster: service_quote, prefix_rewrite: "/" }          
+              rate_limits:
+              - actions:                                 
+                - header_value_match:
+                    descriptor_value: quote-path-auth
+                    expect_match: false
+                    headers:
+                    - name: ":path"
+                      exact_match: "/quote"
+                    - name: "Authorization"                      
+                stage: 0
+              - actions:                                 
+                - header_value_match:
+                    descriptor_value: quote-path-user-limit
+                    headers:
+                    - name: ":path"
+                      exact_match: "/quote"
+                - request_headers:
+                    header_name: "Authorization"
+                    descriptor_key: auth_token                                    
+                stage: 1                              
+              - actions:
+                - header_value_match:
+                    descriptor_value: quote-path-vip
+                    headers:
+                    - name: ":path"
+                      exact_match: "/quote"                                       
+                - request_headers:
+                    header_name: "x-service-level"
+                    descriptor_key: service-level                    
+                stage: 1
+          http_filters:
+          - name: envoy.rate_limit
+            config:
+                domain: apis 
+                stage: 0         
+                request_type: external
+                failure_mode_deny: true
+                rate_limit_service:
+                  grpc_service:
+                    envoy_grpc:
+                      cluster_name: ratelimit
+          - name: envoy.rate_limit
+            config:
+                domain: apis 
+                stage: 1     
+                request_type: external
+                failure_mode_deny: true
+                rate_limit_service:
+                  grpc_service:
+                    envoy_grpc:
+                      cluster_name: ratelimit                      
+          - name: envoy.router
+
+  clusters:
+  - name: service_quote
+    connect_timeout: 2s
+    type: LOGICAL_DNS
+    dns_lookup_family: V4_ONLY
+    lb_policy: ROUND_ROBIN
+    hosts:
+    - socket_address:
+        address: 127.0.0.1
+        port_value: 11000
+
+  - name: ratelimit
+    type: STATIC
+    connect_timeout: 0.25s
+    lb_policy: ROUND_ROBIN
+    hosts: [{ socket_address: { address: 127.0.0.1, port_value: 8081 }}]
+    http2_protocol_options: {}

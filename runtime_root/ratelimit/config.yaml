@@ -1,0 +1,27 @@
+domain: apis
+descriptors:
+- key: header_match
+  value: quote-path-vip
+  descriptors:
+  - key: service-level
+    value: "enhanced"  
+    rate_limit:
+      unit: minute
+      requests_per_unit: 15
+  - key: service-level
+    value: "basic"  
+    rate_limit:
+      unit: minute
+      requests_per_unit: 10
+- key: header_match
+  value: quote-path-user-limit
+  descriptors:
+  - key: auth_token
+    rate_limit:
+      unit: minute
+      requests_per_unit: 20
+- key: header_match
+  value: quote-path-auth
+  rate_limit:
+    unit: minute
+    requests_per_unit: 2
