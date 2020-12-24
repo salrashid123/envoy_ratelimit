@@ -7,6 +7,13 @@ Envoy's rate limit functions checks each request to see if it should go through 
 
 As this is just a tutorial, helloworld, we will use a single Envoy instance that talks to Lyft's Rate limiting gRPC service that also runs on the same machine.  Realistically, you probably want set this up to run within a kubernetes cluster with envoy as a sidecar and the rate limiting service running by itself. 
 
+> **NOTE * we are using the `envoy 1.17.0`
+```
+docker cp `docker create envoyproxy/envoy-dev:latest`:/usr/local/bin/envoy .
+
+./envoy  version: 483dd3007f15e47deed0a29d945ff776abb37815/1.17.0-dev/Clean/RELEASE/BoringSSL
+```
+
 Please also review the following
 
 - [Rate Limiting with Guardian](https://engineering.dollarshaveclub.com/rate-limiting-with-guardian-6520bc84508d)
@@ -65,6 +72,7 @@ cd ratelimit
 # https://github.com/lyft/ratelimit/pull/101
 
 rm go.mod
+go mod init github.com/envoyproxy/ratelimit
 go run src/service_cmd/main.go
 ```
 
