@@ -33,11 +33,12 @@ The quote service has two levels of service: basic and enhanced where the servic
 We would like to setup rate limit controls such that:
 
 1. Anonymous users (not auth token) are allowed 2 req/min of any service level
-2. Users with auth allowed upto 20 req/min of any service level
-3. Users with auth and "enhanced" service level allowed 10 req/min
-4. Users with auth and "basic" service level allowed 15 req/min
+2. Users with auth allowed upto 20 req/min
+3. Users with auth are allowed 10 req/min of "enhanced" service level
+4. Users with auth and allowed 15 req/min of "basic" service level
 
-Which means a single authenticated user can make with in one minute
+Which means a single authenticated user can make upto 20 req/min of a combination of service level requests where each level is capped at its global limit (10 for enhanced and 5 for basic).  The following are valid limit patterns:
+
 - 15 basic  + 5 enhanced 
 - 10 basic  + 10 enhanced
 
@@ -222,7 +223,7 @@ DEBU[0430] cache key: apis_header_match_quote-path-user-limit_auth_token_bob_157
 
 The third compound limiter further fine tunes the rate limiter using _two_ header values:  `Authorization` and the `x-service-level` enumberated value.
 
-In the follwoing, we are emitting the `x-service-level` header as value for the `/quote` path.  The `Authorization` header is emitted as well from the previous configuration.  (TODO: find a way to collapse the rules...)
+In the following, we are emitting the `x-service-level` header as value for the `/quote` path.  The `Authorization` header is emitted as well from the previous configuration.  (TODO: find a way to collapse the rules...)
 ```yaml                                                       
               - actions:
                 - header_value_match:
